@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мини-соцсеть | Голосовалка</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        /* Карточки */
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+
+        /* Форма входа */
+        .auth-container {
+            text-align: center;
+        }
+
+        .auth-form input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+        }
+
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid #667eea;
+            color: #667eea;
+        }
+
+        .btn-outline:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        /* Пост */
+        .post-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            word-break: break-word;
+        }
+
+        .votes {
+            display: flex;
+            gap: 15px;
+            margin: 15px 0;
+        }
+
+        .vote-btn {
+            background: #f0f0f0;
+            color: #333;
+            padding: 8px 20px;
+        }
+
+        .vote-btn.up:hover { background: #48bb78; color: white; }
+        .vote-btn.down:hover { background: #f56565; color: white; }
+
+        .score {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 0 15px;
+        }
+
+        /* Комментарии */
+        .comment {
+            background: #f7f7f7;
+            padding: 12px;
+            border-radius: 12px;
+            margin: 10px 0;
+        }
+
+        .comment-form {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .comment-form input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+        }
+
+        /* Шапка */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .user-email {
+            color: white;
+            font-weight: bold;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            font-size: 16px;
+            font-family: inherit;
+            resize: vertical;
+            margin-bottom: 10px;
+        }
+
+        hr {
+            margin: 20px 0;
+            border: none;
+            border-top: 2px solid #eee;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Шапка -->
+        <div class="header" id="header" style="display: none;">
+            <div class="user-email" id="userEmail"></div>
+            <button id="logoutBtn" style="background: rgba(255,255,255,0.2);">Выйти</button>
+        </div>
+
+        <!-- БЛОК АВТОРИЗАЦИИ -->
+        <div id="authBlock" class="card auth-container">
+            <h2>📱 Мини-соцсеть</h2>
+            <p style="margin: 15px 0; color: #666;">Войдите или зарегистрируйтесь</p>
+            <div class="auth-form">
+                <input type="email" id="email" placeholder="Email" autocomplete="email">
+                <input type="password" id="password" placeholder="Пароль (мин 6 символов)">
+                <button id="loginBtn">Вход</button>
+                <button id="registerBtn" class="btn-outline" style="margin-left: 10px;">Регистрация</button>
+            </div>
+            <div id="authMessage" style="margin-top: 15px; color: #e53e3e;"></div>
+        </div>
+
+        <!-- БЛОК СОЦСЕТИ (показывается после входа) -->
+        <div id="appBlock" class="hidden">
+            <div class="card">
+                <h3>✏️ Создать пост</h3>
+                <textarea id="postTitle" rows="3" placeholder="О чём думаете? Например: «Кофе — это жидкость для программистов»"></textarea>
+                <button id="createPostBtn">📝 Опубликовать</button>
+            </div>
+
+            <div id="postsList"></div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
