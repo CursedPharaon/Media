@@ -1,7 +1,7 @@
 // ========== 1. ПОДКЛЮЧЕНИЕ К SUPABASE ==========
 // ЗАМЕНИТЕ ЭТИ ДАННЫЕ НА СВОИ ИЗ НАСТРОЕК SUPABASE!
-const SUPABASE_URL = 'https://XXXXXXXXXXXXXX.supabase.co'      // Ваш URL
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9....' // Ваш anon ключ
+const SUPABASE_URL = 'https://ersausmyoobemtncwwqn.supabase.co/rest/v1/'      // Ваш URL
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVyc2F1c215b29iZW10bmN3d3FuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAwODA0NjYsImV4cCI6MjA5NTY1NjQ2Nn0.UgszeNyKgx5GGsn_jUYU4J3CibnkkmTMzm_Vi_KpaV8' // Ваш anon ключ
 
 // Инициализация Supabase
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
