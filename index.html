@@ -23,7 +23,6 @@
             margin: 0 auto;
         }
 
-        /* Карточки */
         .card {
             background: white;
             border-radius: 20px;
@@ -32,7 +31,6 @@
             box-shadow: 0 10px 40px rgba(0,0,0,0.1);
         }
 
-        /* Форма входа */
         .auth-container {
             text-align: center;
         }
@@ -73,7 +71,6 @@
             color: white;
         }
 
-        /* Пост */
         .post-title {
             font-size: 20px;
             font-weight: bold;
@@ -85,6 +82,7 @@
             display: flex;
             gap: 15px;
             margin: 15px 0;
+            align-items: center;
         }
 
         .vote-btn {
@@ -99,10 +97,8 @@
         .score {
             font-size: 24px;
             font-weight: bold;
-            margin: 0 15px;
         }
 
-        /* Комментарии */
         .comment {
             background: #f7f7f7;
             padding: 12px;
@@ -123,7 +119,6 @@
             border-radius: 10px;
         }
 
-        /* Шапка */
         .header {
             display: flex;
             justify-content: space-between;
@@ -134,6 +129,9 @@
         .user-email {
             color: white;
             font-weight: bold;
+            background: rgba(0,0,0,0.2);
+            padding: 8px 16px;
+            border-radius: 20px;
         }
 
         textarea {
@@ -156,14 +154,35 @@
         .hidden {
             display: none;
         }
+
+        .message {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 10px;
+        }
+
+        .error {
+            background: #fed7d7;
+            color: #c53030;
+        }
+
+        .success {
+            background: #c6f6d5;
+            color: #276749;
+        }
+
+        .post-meta {
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- Шапка -->
         <div class="header" id="header" style="display: none;">
             <div class="user-email" id="userEmail"></div>
-            <button id="logoutBtn" style="background: rgba(255,255,255,0.2);">Выйти</button>
+            <button id="logoutBtn" style="background: rgba(255,255,255,0.2);">🚪 Выйти</button>
         </div>
 
         <!-- БЛОК АВТОРИЗАЦИИ -->
@@ -173,24 +192,263 @@
             <div class="auth-form">
                 <input type="email" id="email" placeholder="Email" autocomplete="email">
                 <input type="password" id="password" placeholder="Пароль (мин 6 символов)">
-                <button id="loginBtn">Вход</button>
-                <button id="registerBtn" class="btn-outline" style="margin-left: 10px;">Регистрация</button>
+                <button id="loginBtn">🔐 Вход</button>
+                <button id="registerBtn" class="btn-outline">📝 Регистрация</button>
             </div>
-            <div id="authMessage" style="margin-top: 15px; color: #e53e3e;"></div>
+            <div id="authMessage"></div>
         </div>
 
-        <!-- БЛОК СОЦСЕТИ (показывается после входа) -->
+        <!-- БЛОК СОЦСЕТИ -->
         <div id="appBlock" class="hidden">
             <div class="card">
                 <h3>✏️ Создать пост</h3>
-                <textarea id="postTitle" rows="3" placeholder="О чём думаете? Например: «Кофе — это жидкость для программистов»"></textarea>
-                <button id="createPostBtn">📝 Опубликовать</button>
+                <textarea id="postTitle" rows="3" placeholder="О чём думаете?"></textarea>
+                <button id="createPostBtn">📤 Опубликовать</button>
             </div>
-
             <div id="postsList"></div>
         </div>
     </div>
 
-    <script src="app.js"></script>
+    <!-- ПОДКЛЮЧАЕМ SUPABASE -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <script>
+        // ========== 1. НАСТРОЙКИ SUPABASE ==========
+        // ⚠️ ЗАМЕНИТЕ НА ВАШИ ДАННЫЕ ИЗ SUPABASE DASHBOARD!
+        const SUPABASE_URL = 'https://ВАШ_ПРОЕКТ.supabase.co'      // Замените!
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'  // Замените!
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
+        
+        let currentUser = null
+
+        // ========== 2. ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ==========
+        function showMessage(elementId, text, isError = true) {
+            const el = document.getElementById(elementId)
+            if (el) {
+                el.innerHTML = `<div class="message ${isError ? 'error' : 'success'}">${text}</div>`
+                setTimeout(() => { el.innerHTML = '' }, 3000)
+            }
+        }
+
+        function escapeHtml(str) {
+            if (!str) return ''
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;'
+                if (m === '<') return '&lt;'
+                if (m === '>') return '&gt;'
+                return m
+            })
+        }
+
+        // ========== 3. АВТОРИЗАЦИЯ ==========
+        async function register() {
+            const email = document.getElementById('email').value.trim()
+            const password = document.getElementById('password').value
+
+            if (!email || !password) {
+                showMessage('authMessage', 'Заполните email и пароль')
+                return
+            }
+            if (password.length < 6) {
+                showMessage('authMessage', 'Пароль должен быть минимум 6 символов')
+                return
+            }
+
+            const { data, error } = await supabase.auth.signUp({ email, password })
+            if (error) {
+                showMessage('authMessage', error.message)
+            } else {
+                showMessage('authMessage', '✅ Регистрация успешна! Теперь войдите.', false)
+                document.getElementById('password').value = ''
+            }
+        }
+
+        async function login() {
+            const email = document.getElementById('email').value.trim()
+            const password = document.getElementById('password').value
+
+            if (!email || !password) {
+                showMessage('authMessage', 'Заполните email и пароль')
+                return
+            }
+
+            const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+            if (error) {
+                showMessage('authMessage', error.message)
+            } else {
+                showMessage('authMessage', '✅ Вход выполнен!', false)
+                await loadUserAndApp()
+            }
+        }
+
+        async function logout() {
+            await supabase.auth.signOut()
+            currentUser = null
+            document.getElementById('authBlock').style.display = 'block'
+            document.getElementById('appBlock').classList.add('hidden')
+            document.getElementById('header').style.display = 'none'
+        }
+
+        async function loadUserAndApp() {
+            const { data: { user } } = await supabase.auth.getUser()
+            if (user) {
+                currentUser = user
+                document.getElementById('authBlock').style.display = 'none'
+                document.getElementById('appBlock').classList.remove('hidden')
+                document.getElementById('header').style.display = 'flex'
+                document.getElementById('userEmail').textContent = user.email
+                await loadPosts()
+                subscribeToChanges()
+            }
+        }
+
+        // ========== 4. РАБОТА С ПОСТАМИ ==========
+        async function createPost() {
+            if (!currentUser) return
+
+            const title = document.getElementById('postTitle').value.trim()
+            if (!title) {
+                alert('Напишите текст поста')
+                return
+            }
+
+            const { error } = await supabase
+                .from('posts')
+                .insert([{ title, upvotes: 0, downvotes: 0, user_id: currentUser.id }])
+
+            if (error) {
+                alert('Ошибка: ' + error.message)
+            } else {
+                document.getElementById('postTitle').value = ''
+                await loadPosts()
+            }
+        }
+
+        async function loadPosts() {
+            const { data: posts, error } = await supabase
+                .from('posts')
+                .select('*')
+                .order('created_at', { ascending: false })
+
+            if (error) {
+                console.error(error)
+                return
+            }
+
+            const container = document.getElementById('postsList')
+            container.innerHTML = ''
+
+            for (const post of posts) {
+                const { data: comments } = await supabase
+                    .from('comments')
+                    .select('*')
+                    .eq('post_id', post.id)
+                    .order('created_at', { ascending: true })
+
+                container.appendChild(renderPost(post, comments || []))
+            }
+        }
+
+        function renderPost(post, comments) {
+            const div = document.createElement('div')
+            div.className = 'card'
+            div.id = `post-${post.id}`
+
+            const score = post.upvotes - post.downvotes
+            const shortUserId = post.user_id ? post.user_id.slice(0, 8) : 'anon'
+
+            div.innerHTML = `
+                <div class="post-title">${escapeHtml(post.title)}</div>
+                <div class="post-meta">📌 от ${shortUserId}</div>
+                <div class="votes">
+                    <button class="vote-btn up" data-id="${post.id}" data-type="up">👍 ${post.upvotes}</button>
+                    <span class="score">⭐ ${score}</span>
+                    <button class="vote-btn down" data-id="${post.id}" data-type="down">👎 ${post.downvotes}</button>
+                </div>
+                <hr>
+                <div>
+                    <strong>💬 Комментарии (${comments.length})</strong>
+                    <div id="comments-${post.id}" style="margin-top: 10px;">
+                        ${comments.map(c => `<div class="comment"><strong>${escapeHtml(c.user_id?.slice(0,8))}:</strong> ${escapeHtml(c.content)}</div>`).join('')}
+                    </div>
+                    <div class="comment-form">
+                        <input type="text" id="comment-input-${post.id}" placeholder="Написать комментарий...">
+                        <button class="add-comment" data-id="${post.id}">📨 Отправить</button>
+                    </div>
+                </div>
+            `
+
+            const upBtn = div.querySelector('.vote-btn.up')
+            const downBtn = div.querySelector('.vote-btn.down')
+            const commentBtn = div.querySelector('.add-comment')
+
+            upBtn.addEventListener('click', () => vote(post.id, 'up'))
+            downBtn.addEventListener('click', () => vote(post.id, 'down'))
+            commentBtn.addEventListener('click', () => addComment(post.id))
+
+            return div
+        }
+
+        async function vote(postId, type) {
+            if (!currentUser) return
+
+            const { data: post } = await supabase
+                .from('posts')
+                .select('upvotes, downvotes')
+                .eq('id', postId)
+                .single()
+
+            if (!post) return
+
+            const updates = {
+                upvotes: type === 'up' ? post.upvotes + 1 : post.upvotes,
+                downvotes: type === 'down' ? post.downvotes + 1 : post.downvotes
+            }
+
+            await supabase.from('posts').update(updates).eq('id', postId)
+            await loadPosts()
+        }
+
+        async function addComment(postId) {
+            if (!currentUser) return
+
+            const input = document.getElementById(`comment-input-${postId}`)
+            const content = input.value.trim()
+            if (!content) return
+
+            const { error } = await supabase
+                .from('comments')
+                .insert([{ post_id: postId, content, user_id: currentUser.id }])
+
+            if (!error) {
+                input.value = ''
+                await loadPosts()
+            } else {
+                alert('Ошибка: ' + error.message)
+            }
+        }
+
+        function subscribeToChanges() {
+            supabase
+                .channel('public-changes')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'posts' }, () => loadPosts())
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'comments' }, () => loadPosts())
+                .subscribe()
+        }
+
+        // ========== 5. ЗАПУСК ==========
+        document.addEventListener('DOMContentLoaded', async () => {
+            document.getElementById('loginBtn').addEventListener('click', login)
+            document.getElementById('registerBtn').addEventListener('click', register)
+            document.getElementById('logoutBtn').addEventListener('click', logout)
+            document.getElementById('createPostBtn').addEventListener('click', createPost)
+
+            const { data: { session } } = await supabase.auth.getSession()
+            if (session?.user) {
+                await loadUserAndApp()
+            }
+        })
+    </script>
 </body>
 </html>
